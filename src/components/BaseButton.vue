@@ -6,7 +6,7 @@ interface ButtonProps {
   disabled?: boolean
 }
 
-const { buttonType = 'button', disabled = false } = defineProps<ButtonProps>()
+const props = withDefaults(defineProps<ButtonProps>(), { buttonType: 'button', disabled: false })
 
 const emit = defineEmits<{ (e: 'click'): void }>()
 </script>

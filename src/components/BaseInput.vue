@@ -24,7 +24,13 @@ interface InputProps {
   maxlength?: number
 }
 
-const props = defineProps<InputProps>()
+const props = withDefaults(defineProps<InputProps>(), {
+  title: '',
+  placeholder: '',
+  type: 'text',
+  required: false,
+  disabled: false,
+})
 
 const emit = defineEmits<{
   (e: 'valid', isValid: boolean): void
