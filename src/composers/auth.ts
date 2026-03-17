@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from '@/utils/storageKeys'
 import { computed, ref, type ComputedRef, type Ref } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -38,10 +39,10 @@ export function useAuth(): AuthData {
 
   const currentUser = ref<UserData | null>(null)
 
-  const isAuthenticated = computed<boolean>(() => !!localStorage.getItem('token'))
+  const isAuthenticated = computed<boolean>(() => !!localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN))
 
   function initUser(): void {
-    const savedUser = localStorage.getItem('user')
+    const savedUser = localStorage.getItem(STORAGE_KEYS.USER)
 
     if (savedUser) {
       try {
@@ -76,8 +77,8 @@ export function useAuth(): AuthData {
           login: foundUser.login,
           name: foundUser.name,
         }
-        localStorage.setItem('user', JSON.stringify(userData))
-        localStorage.setItem('token', generateToken(login.value))
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData))
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, generateToken(login.value))
 
         currentUser.value = userData
 
@@ -124,8 +125,8 @@ export function useAuth(): AuthData {
   }
 
   function cleanAuthData(): void {
-    localStorage.removeItem('user')
-    localStorage.removeItem('token')
+    localStorage.removeItem(STORAGE_KEYS.USER)
+    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN)
   }
 
   return {
