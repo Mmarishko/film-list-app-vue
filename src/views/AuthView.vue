@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import BaseButton from '@/components/BaseButton.vue'
-import BaseInput from '@/components/BaseInput.vue'
+import BaseButton from '@/components/UI/BaseButton.vue'
+import BaseInput from '@/components/UI/BaseInput.vue'
 import { useAuth } from '@/composers/auth'
 import { computed } from 'vue'
 

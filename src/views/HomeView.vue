@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import BaseButton from '@/components/BaseButton.vue'
+import BaseButton from '@/components/UI/BaseButton.vue'
 import { useAuth } from '@/composers/auth'
 
 const { currentUser, isAuthenticated, handleLogout } = useAuth()
