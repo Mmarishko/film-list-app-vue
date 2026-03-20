@@ -13,9 +13,9 @@ export interface Film {
   director: string
 }
 
-export type FilmFormData = Pick<Film, 'title' | 'rating' | 'year' | 'director'>
+export type FilmFormData = Pick<Film, 'title' | 'rating' | 'year' | 'director' | 'description'>
 
-const filmsData: Film[] = [
+const INITIAL_FILMS_DATA: Film[] = [
   {
     id: '1',
     user: 'marina',
@@ -24,7 +24,7 @@ const filmsData: Film[] = [
     rating: 9.0,
     year: '1984',
     date: '2026.01.21T12:12:12',
-    director: 'Джеймс Кемерон',
+    director: 'James Cameron',
   },
   {
     id: '2',
@@ -34,7 +34,7 @@ const filmsData: Film[] = [
     rating: 9.5,
     year: '2014',
     date: '2026.01.20T12:12:12',
-    director: 'Кристофер Нолан',
+    director: 'Christopher Nolan',
   },
   {
     id: '3',
@@ -44,7 +44,7 @@ const filmsData: Film[] = [
     rating: 8.5,
     year: '2006',
     date: '2026.01.22T12:12:12',
-    director: 'Дэвид Фрэнкел',
+    director: 'David Frankel',
   },
   {
     id: '4',
@@ -53,7 +53,7 @@ const filmsData: Film[] = [
     rating: 8.0,
     date: '2026.01.23T12:12:12',
     year: '2002',
-    director: 'Сэм Рэйми',
+    director: 'Sam Raimi',
   },
   {
     id: '5',
@@ -62,7 +62,7 @@ const filmsData: Film[] = [
     rating: 9.0,
     date: '2026.01.23T12:12:12',
     year: '2001',
-    director: 'Крис Коламбус',
+    director: 'Chris Columbus',
   },
   {
     id: '6',
@@ -71,19 +71,21 @@ const filmsData: Film[] = [
     rating: 9.5,
     date: '2026.01.23T12:12:12',
     year: '2008',
-    director: 'Джон Фавро',
+    director: 'John Favreau',
   },
 ]
 
 interface FilmsData {
-  films: Ref<Film[]>
-
+  // Состояние
   error: Ref<string>
   loading: Ref<boolean>
 
+  // Методы
   getUserFilmsList: () => Film[]
   getUserFilmById: (id: string) => Film | null
   addFilm: (filmData: FilmFormData) => void
+  editFilm: (filmData: FilmFormData, id: string) => void
+  deleteFilm: (id: string) => boolean
 }
 
 export function useFilms(): FilmsData {
@@ -97,22 +99,15 @@ export function useFilms(): FilmsData {
   watch(
     films,
     (newFilms) => {
-      error.value = ''
-      loading.value = true
-
-      try {
-        localStorage.setItem(STORAGE_KEYS.FILMS, JSON.stringify(newFilms))
-      } catch (err: unknown) {
-        console.error('Error saving to localStorage:', err)
-        error.value = 'Saving data error'
-      } finally {
-        loading.value = false
-      }
+      saveFilmsToLocalStore(newFilms)
     },
     { deep: true },
   )
 
-  function initFilms(): void {
+  /**
+   * load films from Storage
+   */
+  function loadFilms(): void {
     error.value = ''
     loading.value = true
 
@@ -121,20 +116,42 @@ export function useFilms(): FilmsData {
       if (savedFilms) {
         films.value = JSON.parse(savedFilms)
       } else {
-        films.value = [...filmsData]
+        films.value = [...INITIAL_FILMS_DATA]
       }
     } catch (err: unknown) {
       console.error('Error initializing films:', err)
 
       error.value = 'Loading data error'
-      films.value = [...filmsData]
+      films.value = [...INITIAL_FILMS_DATA]
     } finally {
       loading.value = false
     }
   }
 
-  initFilms()
+  loadFilms()
 
+  /**
+   * save films to LocalStore
+   * @param newFilms array films for saving
+   * @returns undefined
+   */
+  function saveFilmsToLocalStore(newFilms: Film[]): void {
+    error.value = ''
+
+    try {
+      localStorage.setItem(STORAGE_KEYS.FILMS, JSON.stringify(newFilms))
+    } catch (err: unknown) {
+      console.error('Error saving to localStorage:', err)
+      error.value = 'Saving data error'
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * method for get film list for current user
+   * @returns array of films
+   */
   function getUserFilmsList(): Film[] {
     const userLogin: string | undefined = currentUser.value?.login
     if (!userLogin) {
@@ -156,6 +173,11 @@ export function useFilms(): FilmsData {
     }
   }
 
+  /**
+   * method for get film data by id
+   * @param id film id
+   * @returns film or null
+   */
   function getUserFilmById(id: string): Film | null {
     const userLogin: string | undefined = currentUser.value?.login
     if (!userLogin) {
@@ -168,6 +190,11 @@ export function useFilms(): FilmsData {
     return film?.user === userLogin ? film : null
   }
 
+  /**
+   * method for add new film
+   * @param filmData film data for add
+   * @returns undefined
+   */
   function addFilm(filmData: FilmFormData): void {
     if (!currentUser.value) {
       error.value = 'Authorization required'
@@ -178,8 +205,9 @@ export function useFilms(): FilmsData {
     loading.value = true
 
     try {
+      const uuid = crypto.randomUUID()
       const newFilm: Film = {
-        id: String(films.value.length + 1),
+        id: String(uuid),
         user: currentUser.value?.login,
         title: filmData.title,
         rating: filmData.rating,
@@ -189,6 +217,7 @@ export function useFilms(): FilmsData {
       }
 
       films.value.push(newFilm)
+      // фильм добавлен
     } catch (err: unknown) {
       error.value = 'Add film error'
       console.error('Add film error:', err)
@@ -197,14 +226,87 @@ export function useFilms(): FilmsData {
     }
   }
 
-  return {
-    films,
+  /**
+   * method for edit film
+   * @param filmData film data for edit
+   * @param id id film for edit
+   * @returns undefined
+   */
+  function editFilm(filmData: FilmFormData, id: string): void {
+    if (!currentUser.value) {
+      error.value = 'Authorization required'
+      return
+    }
 
+    error.value = ''
+    loading.value = true
+
+    try {
+      const filmIndex = films.value.findIndex(
+        (film) => film.id === id && film.user === currentUser.value?.login,
+      )
+
+      if (filmIndex === -1) {
+        error.value = 'Can`t find film for edit'
+        return
+      }
+
+      const currentFilmData: Film | undefined = films.value[filmIndex]
+
+      if (currentFilmData) {
+        const newFilmData: Film = {
+          ...currentFilmData,
+          ...filmData,
+          date: new Date().toISOString(),
+        }
+        films.value[filmIndex] = newFilmData
+      }
+    } catch (err: unknown) {
+      error.value = 'Add film error'
+      console.error('Add film error:', err)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  function deleteFilm(id: string): boolean {
+    if (!currentUser.value) {
+      error.value = 'Authorization required'
+      return false
+    }
+
+    error.value = ''
+    loading.value = true
+
+    try {
+      const filmIndex: number | undefined = films.value.findIndex(
+        (film) => film.id === id && film.user === currentUser.value?.login,
+      )
+
+      if (filmIndex === -1) {
+        error.value = 'Can`t find film for delete'
+        return false
+      }
+
+      films.value.splice(filmIndex, 1)
+      return true
+    } catch (err: unknown) {
+      error.value = 'Delete film error'
+      console.error('Delete film error:', err)
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return {
     error,
     loading,
 
     getUserFilmsList,
     getUserFilmById,
     addFilm,
+    editFilm,
+    deleteFilm,
   }
 }

@@ -8,27 +8,47 @@ interface FilmListItemProps {
 }
 
 interface FilmListItemEmits {
-  (event: 'edit', id: string): void
+  (event: 'edit', film: Film): void
+  (event: 'view', film: Film): void
+  (event: 'delete', film: Film): void
 }
 
 const props = defineProps<FilmListItemProps>()
 const emits = defineEmits<FilmListItemEmits>()
+
+function handleEdit(e: Event) {
+  e.stopPropagation()
+  emits('edit', props.film)
+}
+
+function handleView() {
+  emits('view', props.film)
+}
+
+function handleDelete() {
+  emits('delete', props.film)
+}
 </script>
 
 <template>
-  <div class="film-item">
-    <div class="title">{{ film.title }}</div>
-    <div class="rating">
-      <span>
-        <Icon name="star"></Icon>
-        {{ film.rating }}</span
-      >
-    </div>
+  <div class="film-item" @click="handleView">
+    <div class="film-info">
+      <div class="title">{{ film.title }}</div>
+      <div class="rating">
+        <span>
+          <Icon name="star"></Icon>
+          {{ film.rating }}</span
+        >
+      </div>
 
-    <div class="director"><span>Режиссер: </span>{{ film.director }}</div>
+      <div class="director"><span>Director: </span>{{ film.director }}</div>
+    </div>
     <div class="panel">
-      <BaseButton class="button" @click="emits('edit', film.id)"
+      <BaseButton class="button" aria-label="Edit film" @click.stop="(e) => handleEdit(e)"
         ><span class="edit"></span>Edit</BaseButton
+      >
+      <BaseButton class="button" :color="'red'" aria-label="Delete film" @click.stop="handleDelete"
+        ><span class="edit"></span>Delete</BaseButton
       >
     </div>
   </div>
@@ -39,9 +59,18 @@ const emits = defineEmits<FilmListItemEmits>()
   padding: 1rem;
   border: 1px solid var(--color-border);
   border-radius: 10px;
+  grid-template-rows: 1fr 20%;
+  transition: transform box-shadow border-width 0.3s ease-in-out;
+}
+
+.film-item:hover {
+  box-shadow: 2px 3px 5px var(--color-border);
+  transform: scale(1.03);
+}
+
+.film-info {
   display: grid;
   grid-template-columns: 80% auto;
-  grid-template-rows: 1fr 20%;
 }
 .title {
   font-size: 1.5rem;

@@ -1,27 +1,64 @@
 <script setup lang="ts">
-import { useFilms, type Film } from '@/composers/films'
-import { ref } from 'vue'
+import { useFilms, type Film, type FilmFormData } from '@/composers/films'
+import { computed, ref, watch } from 'vue'
 import FilmsListItem from './FilmsListItem.vue'
 import { useAuth } from '@/composers/auth'
 import BaseButton from '../UI/BaseButton.vue'
+import FilmModal from './FilmModal.vue'
+
+export type EditMode = 'edit' | 'add' | 'view'
 
 const { currentUser } = useAuth()
-const { getUserFilmsList, addFilm } = useFilms()
-const userFilms = ref<Film[]>(getUserFilmsList())
+const { getUserFilmsList, addFilm, editFilm, getUserFilmById, deleteFilm } = useFilms()
 
-function addNewFilm() {
-  if (currentUser.value) {
-    addFilm({
-      title: 'The Shawshank Redemption',
-      rating: 8.5,
-      year: '1994',
-      director: 'Фрэнк Дарабонт',
-    })
-    userFilms.value = getUserFilmsList()
+const userFilms = computed<Film[]>(() => {
+  return getUserFilmsList()
+})
+
+const showModal = ref<boolean>(false)
+const editMode = ref<EditMode>('view')
+
+const film = ref<Film | null>()
+
+const modalTitle = computed<string>(() =>
+  editMode.value === 'view' ? 'Film detail' : film.value ? 'Edit film' : 'Add new film',
+)
+
+function handleConfirm(data: FilmFormData): void {
+  if (currentUser.value && editMode.value) {
+    if (film.value) {
+      editFilm(data, film.value.id)
+    } else {
+      addFilm(data)
+    }
   }
+
+  showModal.value = false
 }
-function editFilm(id: string) {
-  console.log('edit', id)
+
+function openModalForAddFilm(): void {
+  film.value = null
+  editMode.value = 'add'
+  showModal.value = true
+}
+
+function openModalForEditFilm(filmData: Film): void {
+  editMode.value = 'edit'
+  film.value = filmData
+  showModal.value = true
+}
+
+function openModalForShowFilmDetail(filmData: Film): void {
+  editMode.value = 'view'
+  film.value = filmData
+  showModal.value = true
+}
+
+function handleDeleteFilm(filmData: Film): void {
+  if (confirm('Are you shure?')) {
+    const success = deleteFilm(filmData.id)
+    if (success) alert(`Film ${filmData.title} deleted`)
+  }
 }
 </script>
 
@@ -29,12 +66,28 @@ function editFilm(id: string) {
   <section>
     <div class="panel">
       <h2>My film list</h2>
-      <BaseButton @click="addNewFilm">Add film</BaseButton>
+      <BaseButton class="add-button" @click="openModalForAddFilm()">Add film</BaseButton>
     </div>
     <div v-if="userFilms.length > 0" class="film-container">
-      <FilmsListItem v-for="film in userFilms" :key="film.id" :film="film" @edit="editFilm" />
+      <FilmsListItem
+        v-for="film in userFilms"
+        :key="film.id"
+        :film="film"
+        @edit="openModalForEditFilm"
+        @view="openModalForShowFilmDetail"
+        @delete="handleDeleteFilm"
+      />
     </div>
-    <div v-else class="">Список пуст</div>
+    <div v-else class="">No films</div>
+    <FilmModal
+      :is-visible="showModal"
+      :mode="editMode"
+      :film="film"
+      :modal-title="modalTitle"
+      @confirm="handleConfirm"
+      @cancel="showModal = false"
+    />
+    <div id="modal"></div>
   </section>
 </template>
 
@@ -50,5 +103,9 @@ h2 {
 .panel {
   display: flex;
   justify-content: space-between;
+}
+
+.add-button {
+  margin-bottom: 0.75rem;
 }
 </style>
