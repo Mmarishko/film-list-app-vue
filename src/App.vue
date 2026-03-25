@@ -16,6 +16,7 @@ import { RouterLink, RouterView } from 'vue-router'
   </header>
 
   <RouterView />
+  <div id="myModal"></div>
 </template>
 
 <style scoped>

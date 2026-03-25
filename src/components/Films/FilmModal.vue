@@ -111,7 +111,7 @@ function resetForm() {
 </script>
 
 <template>
-  <Teleport to="body">
+  <Teleport to="#myModal">
     <transition name="fade">
       <div v-show="isVisible" class="modal-overlay" @click.self="handleCancel">
         <div class="modal-container" @click.self="handleCancel">
