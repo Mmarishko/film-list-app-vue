@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type Film, type FilmFormData } from '@/composers/films'
 import BaseButton from '../UI/BaseButton.vue'
-import { computed, ref, watch } from 'vue'
+import { computed, inject, ref, watch, type Ref } from 'vue'
 import FilmForm from './FilmForm.vue'
 import FilmDetail from './FilmDetail.vue'
 import type { EditMode } from './FilmsList.vue'
@@ -9,7 +9,6 @@ import type { EditMode } from './FilmsList.vue'
 interface ModalProps {
   modalTitle: string
   isVisible: boolean
-  film?: Film | null
   mode?: EditMode
 }
 
@@ -21,11 +20,14 @@ interface ModalEmits {
 const props = defineProps<ModalProps>()
 const emit = defineEmits<ModalEmits>()
 
+const film = inject<Ref<Film | null>>('currentFilm', ref(null))
+
 const formData = ref<FilmFormData>({
   title: '',
   rating: 0,
   year: '',
   director: '',
+  description: '',
 })
 
 // const error = ref<string>('')
@@ -36,8 +38,9 @@ const isEdit = computed<boolean>(() => props.mode !== 'view')
 
 // сбросить данные на форме
 watch(
-  () => props.film,
+  () => film?.value,
   (newFilm) => {
+    console.log('newFilm', newFilm)
     if (!newFilm) {
       // открытие формы добавления фильма после редактирования другого фильма
       resetForm()
@@ -46,7 +49,7 @@ watch(
 )
 
 watch(
-  () => props.film,
+  () => film?.value,
   (newFilm) => {
     if (newFilm)
       formData.value = {
@@ -54,6 +57,7 @@ watch(
         rating: newFilm.rating,
         year: newFilm.year,
         director: newFilm.director,
+        description: newFilm.description ? newFilm.description : '',
       }
   },
 )
@@ -77,6 +81,7 @@ function handleConfirm() {
       rating: formData.value.rating,
       year: formData.value.year,
       director: formData.value.director,
+      description: formData.value.description ? formData.value.description : '',
     })
     if (props.mode === 'add') resetForm()
   } catch (err: unknown) {
@@ -100,6 +105,7 @@ function resetForm() {
     rating: 0,
     year: '',
     director: '',
+    description: '',
   }
 }
 </script>
@@ -137,8 +143,9 @@ function resetForm() {
                 class="modal-button confirm"
                 @click="handleConfirm"
                 :disabled="isLoading"
-                >{{ isLoading ? 'Saving...' : film ? 'Save' : 'Add' }}</BaseButton
               >
+                {{ isLoading ? 'Saving...' : props.mode === 'edit' ? 'Save' : 'Add' }}
+              </BaseButton>
               <BaseButton class="modal-button cancel" @click="handleCancel" :disabled="isLoading"
                 >Cancel</BaseButton
               >

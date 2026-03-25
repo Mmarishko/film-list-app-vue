@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useFilms, type Film, type FilmFormData } from '@/composers/films'
-import { computed, ref, watch } from 'vue'
+import { computed, provide, ref, watch } from 'vue'
 import FilmsListItem from './FilmsListItem.vue'
 import { useAuth } from '@/composers/auth'
 import BaseButton from '../UI/BaseButton.vue'
@@ -18,7 +18,9 @@ const userFilms = computed<Film[]>(() => {
 const showModal = ref<boolean>(false)
 const editMode = ref<EditMode>('view')
 
-const film = ref<Film | null>()
+const film = ref<Film | null>(null)
+
+provide('currentFilm', film)
 
 const modalTitle = computed<string>(() =>
   editMode.value === 'view' ? 'Film detail' : film.value ? 'Edit film' : 'Add new film',
@@ -82,7 +84,6 @@ function handleDeleteFilm(filmData: Film): void {
     <FilmModal
       :is-visible="showModal"
       :mode="editMode"
-      :film="film"
       :modal-title="modalTitle"
       @confirm="handleConfirm"
       @cancel="showModal = false"
