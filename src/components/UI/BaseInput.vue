@@ -11,6 +11,7 @@ type InputType =
   | 'search'
   | 'date'
   | 'time'
+  | 'textarea'
 
 interface InputProps {
   name: string
@@ -130,7 +131,26 @@ function onFocus(event: FocusEvent) {
     <label v-if="title" :for="name"
       >{{ title }} <span v-if="required" class="required-star" aria-hidden="true">*</span></label
     >
+    <textarea
+      v-if="type === 'textarea'"
+      :id="name"
+      v-model="model"
+      :name="name"
+      :placeholder="placeholder"
+      :required="required"
+      :disabled="disabled"
+      :minlength="minlength"
+      :maxlength="maxlength"
+      :class="{ 'input-error': touched && error }"
+      :aria-invalid="!!error"
+      :aria-describedby="error ? errorId : undefined"
+      rows="6"
+      @input="onInput"
+      @blur="onBlur"
+      @focus="onFocus"
+    ></textarea>
     <input
+      v-else
       :id="name"
       v-model="model"
       :type="type"
@@ -167,7 +187,8 @@ label {
   font-weight: 500;
 }
 
-input {
+input,
+textarea {
   padding: 0.75rem;
   border-radius: 10px;
   border-width: 1px;
@@ -176,12 +197,14 @@ input {
 }
 
 /* Состояния валидации */
-input.input-error {
+input.input-error,
+textarea.input-error {
   border-color: var(--color-error);
   background-color: #fff8f8;
 }
 
-input.input-error:focus {
+input.input-error:focus,
+textarea.input-error:focus {
   border-color: var(--color-error);
   box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
 }

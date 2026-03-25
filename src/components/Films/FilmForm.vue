@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { FilmFormData } from '@/composers/films'
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import BaseInput from '../UI/BaseInput.vue'
 import { MAX_YEAR_ADD_VALUE, MIN_YEAR_VALUE } from '@/utils/const'
 
@@ -90,6 +90,16 @@ function handleFieldUpdate(key: keyof FilmFormData, value: string | number) {
       :title="'Director'"
       :placeholder="'Surname first name'"
       required
+      :disabled="isLoading"
+    />
+    <BaseInput
+      name="description"
+      type="textarea"
+      :modelValue="formData.description"
+      @update:model-value="handleFieldUpdate('description', $event)"
+      @valid="validateField"
+      :title="'Description'"
+      :placeholder="'Description'"
       :disabled="isLoading"
     />
   </div>

@@ -214,6 +214,7 @@ export function useFilms(): FilmsData {
         date: new Date().toISOString(),
         year: filmData.year,
         director: filmData.director,
+        description: filmData.description ? filmData.description : '',
       }
 
       films.value.push(newFilm)

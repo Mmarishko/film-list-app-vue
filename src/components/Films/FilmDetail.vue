@@ -14,7 +14,7 @@ const props = defineProps<FilmListItemProps>()
     <div class="rating"><span> Rating: </span> {{ film.rating }}</div>
 
     <div class="director"><span>Director: </span>{{ film.director }}</div>
-    <div v-if="film.description" class="description">{{ film.description }}</div>
+    <div v-if="film?.description" class="description">{{ film.description }}</div>
   </div>
 </template>
 
