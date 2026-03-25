@@ -11,6 +11,7 @@ type InputType =
   | 'search'
   | 'date'
   | 'time'
+  | 'textarea'
 
 interface InputProps {
   name: string
@@ -22,6 +23,9 @@ interface InputProps {
   pattern?: string
   minlength?: number
   maxlength?: number
+  min?: number
+  max?: number
+  step?: number
 }
 
 const props = withDefaults(defineProps<InputProps>(), {
@@ -38,7 +42,7 @@ const emit = defineEmits<{
   (e: 'focus', event: FocusEvent): void
 }>()
 
-const model = defineModel<string>({ default: '' })
+const model = defineModel<string | number>({ default: '' })
 
 // Состояние
 const error = ref<string>('')
@@ -62,31 +66,37 @@ watch(
 )
 
 // Валидация поля
-function validateField(value: string): boolean {
+function validateField(value: string | number): boolean {
   error.value = ''
+  const stringValue = String(value)
 
   // Проверка на обязательность
-  if (props.required && !value.trim()) {
+  if (props.required && !stringValue.trim()) {
     error.value = 'Field is required'
     return false
   }
 
   // Если поле пустое и не обязательно - ок
-  if (!value.trim()) {
+  if (!stringValue.trim()) {
     return true
   }
 
-  if (props.minlength && value.length < props.minlength) {
+  if (props.minlength && stringValue.length < props.minlength) {
     error.value = `Minimum length ${props.minlength} characters`
     return false
   }
 
-  if (props.maxlength && value.length > props.maxlength) {
+  if (props.maxlength && stringValue.length > props.maxlength) {
     error.value = `Maximum length ${props.maxlength} characters`
     return false
   }
 
-  if (props.pattern && !new RegExp(props.pattern).test(value)) {
+  if ((props.max && Number(value) > props.max) || (props.min && Number(value) < props.min)) {
+    error.value = `Maximum value ${props.max}, minimum value  ${props.min}`
+    return false
+  }
+
+  if (props.pattern && !new RegExp(props.pattern).test(stringValue)) {
     error.value = 'Invalid format'
     return false
   }
@@ -121,7 +131,26 @@ function onFocus(event: FocusEvent) {
     <label v-if="title" :for="name"
       >{{ title }} <span v-if="required" class="required-star" aria-hidden="true">*</span></label
     >
+    <textarea
+      v-if="type === 'textarea'"
+      :id="name"
+      v-model="model"
+      :name="name"
+      :placeholder="placeholder"
+      :required="required"
+      :disabled="disabled"
+      :minlength="minlength"
+      :maxlength="maxlength"
+      :class="{ 'input-error': touched && error }"
+      :aria-invalid="!!error"
+      :aria-describedby="error ? errorId : undefined"
+      rows="6"
+      @input="onInput"
+      @blur="onBlur"
+      @focus="onFocus"
+    ></textarea>
     <input
+      v-else
       :id="name"
       v-model="model"
       :type="type"
@@ -131,6 +160,9 @@ function onFocus(event: FocusEvent) {
       :disabled="disabled"
       :minlength="minlength"
       :maxlength="maxlength"
+      :min="min"
+      :max="max"
+      :step="step"
       :class="{ 'input-error': touched && error }"
       :aria-invalid="!!error"
       :aria-describedby="error ? errorId : undefined"
@@ -155,7 +187,8 @@ label {
   font-weight: 500;
 }
 
-input {
+input,
+textarea {
   padding: 0.75rem;
   border-radius: 10px;
   border-width: 1px;
@@ -164,12 +197,14 @@ input {
 }
 
 /* Состояния валидации */
-input.input-error {
+input.input-error,
+textarea.input-error {
   border-color: var(--color-error);
   background-color: #fff8f8;
 }
 
-input.input-error:focus {
+input.input-error:focus,
+textarea.input-error:focus {
   border-color: var(--color-error);
   box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
 }
